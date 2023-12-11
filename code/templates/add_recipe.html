@@ -1,0 +1,34 @@
+{% extends "index.html" %}
+
+{% block title %} Add recipe {% endblock %}
+
+{% block main %}
+
+<form action="add_recipe" method="post">
+    <fieldset>
+        <div>
+            <label for="name" class="form-label">Name of recipe:</label>
+            <input type="text" id="name" name="name" class="form-control" required>
+        </div>
+        <div>
+            <label for="author" class="form-label">What's your name?:</label>
+            <input type="text" id="author" name="author" class="form-control" required>
+        </div>
+        <div>
+            <label for="description" class="form-label">Name of recipe:</label>
+            <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+        </div>
+    </fieldset>
+    <button type="submit" class="btn btn-primary">Post recipe</button>
+</form>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+
+{% endblock %}

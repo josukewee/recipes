@@ -1,0 +1,130 @@
+{% extends "index.html" %}
+
+{% block title %} Recipes {% endblock %}
+
+{% block main %} 
+
+<h1 style="text-align: center; margin: 3rem;">Recipes!</h1>
+<script>
+
+function deleteRecipe(givenSecret, recipeId) {
+    console.log("function is called", givenSecret, recipeId)
+
+    let lSecret = window.prompt("Please enter secret key.")
+    if(lSecret == givenSecret)  {
+        fetch(`/api/recipe/${recipeId}`, {
+            method: "DELETE",
+            headers: {
+                "Content-type": "application/json"
+            },
+            body: JSON.stringify({
+                _id: recipeId,
+                secret: lSecret
+            })
+        })
+        .then(res => res.json())
+        .then(function deleteOnSuccess(data) {
+            console.log(data)
+
+            let recipeContainer = document.getElementById(`recipe-container-${recipeId}`)
+            recipeContainer.remove()
+
+
+        }
+        
+
+        )
+        .catch(err => console.error('Error: ', err))
+    }else {
+        if(window.confirm("You typed in the wrong secret key, press OK to try again.")){
+            deleteRecipe(givenSecret)
+        }
+    }
+}
+
+function editRecipe(id) {
+    
+    let newName = document.getElementById(`editName${id}`).value
+    let newAuthor = document.getElementById(`editAuthor${id}`).value
+    let newDescription = document.getElementById(`editDescription${id}`).value
+
+
+    
+    console.log(id, newName, newAuthor, newDescription)
+    fetch(`/api/recipe/${id}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name: newName,
+            author: newAuthor,
+            description: newDescription
+        })
+    })
+    .then(res => res.json())
+    .then(function success(data) {
+        console.log(data)
+
+        const recipeContainer = document.getElementById(`recipe-container-${id}`)
+        recipeContainer.querySelector('.recipe-name').innerText = newName
+        recipeContainer.querySelector('.recipe-author').innerText = newAuthor
+        recipeContainer.querySelector('.recipe-description').innerText = newDescription
+    })
+    .catch(err => console.error('Error: ', err))
+    
+
+}
+
+</script>
+
+</script>
+<div class="all_recipes_container">
+    <div class="recipes-columns">
+        {% for recipe in recipes_list %}
+            <div class="recipe-container" id="recipe-container-{{ recipe._id }}">
+                <h1 class="recipe-name">{{ recipe.name }}</h1>
+                <p class="recipe-author">{{ recipe.author }}</p>
+                <h2 class="recipe-description">{{ recipe.description }}</h2>
+                <button type="button" class="btn btn-outline-danger"><i class="fa-solid fa-trash" onclick="deleteRecipe('{{ recipe.secret }}', '{{ recipe._id }}')"></i></button>
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop{{ recipe._id }}"><i class="fa-solid fa-pen-to-square"></i></button>
+            </div>
+
+            <!-- Modal -->
+            <div class="modal fade" id="staticBackdrop{{ recipe._id }}" data-bs-keyboard="true" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="staticBackdropLabel">Edit recipe</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="editRecipeForm">
+                                <fieldset>
+                                    <input type="hidden" id="editRecipeId" name="editRecipeId" value="{{ recipe._id }}">
+                                    <div>
+                                        <label for="name" class="form-label">Name of recipe:</label>
+                                        <input type="text" id="editName{{ recipe._id }}" name="name" class="form-control" value="{{ recipe.name }}">
+                                    </div>
+                                    <div>
+                                        <label for="author" class="form-label">Author:</label>
+                                        <input type="text" id="editAuthor{{ recipe._id }}" name="author" class="form-control" value="{{ recipe.author }}">
+                                    </div>
+                                    <div>
+                                        <label for="description" class="form-label">Description:</label>
+                                        <textarea class="form-control" id="editDescription{{ recipe._id }}" name="description" rows="4">{{ recipe.description }}</textarea>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" onclick="editRecipe('{{ recipe._id }}')" >Update recipe</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
