@@ -7,6 +7,66 @@
 <h1 style="text-align: center; margin: 3rem;">Recipes!</h1>
 <script>
 
+function submitFilters() {
+    const selectedMealType = document.querySelector('input[name="btnradio1"]:checked + label').textContent;
+    const selectedDiet = document.querySelector('input[name="btnradio2"]:checked + label').textContent;
+    const selectedMaxTime = parseInt(document.getElementById('max_time').value, 10);
+    const setOrder = document.querySelector('input[name="flexRadioDefault"]:checked + label')?.textContent.trim();
+
+    filters = [selectedMealType, selectedDiet, selectedMaxTime];
+    filters.forEach((recipe) => {
+        if (recipe == null) {
+            recipe = 'none';
+    }
+});
+
+    console.log(selectedDiet, selectedMealType, selectedMaxTime, setOrder)
+    fetch('/api/filter/', {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            meal_type: selectedMealType,
+            diet: selectedDiet,
+            max_time: selectedMaxTime,
+            order: setOrder
+        })
+    })
+    .then(resp => resp.json())
+    .then(function displayFilter(recipes){
+        console.log(recipes);
+        const recipesContainer = document.querySelector('.recipes-columns');
+
+
+        recipesContainer.innerHTML = '';
+
+
+        recipes.forEach(recipe => {
+            const recipeContainer = document.createElement('div');
+            recipeContainer.classList.add('recipe-container');
+            recipeContainer.id = `recipe-container-${recipe._id}`;
+
+            const nameElement = document.createElement('h1');
+            nameElement.classList.add('recipe-name');
+            nameElement.textContent = recipe.name;
+            recipeContainer.appendChild(nameElement);
+
+            const authorElement = document.createElement('p');
+            authorElement.classList.add('recipe-author');
+            authorElement.textContent = recipe.author;
+            recipeContainer.appendChild(authorElement);
+
+            const descriptionElement = document.createElement('h2');
+            descriptionElement.classList.add('recipe-description');
+            descriptionElement.textContent = recipe.description;
+            recipeContainer.appendChild(descriptionElement);
+
+            recipesContainer.appendChild(recipeContainer);
+    });
+    })
+}    
+
 function deleteRecipe(givenSecret, recipeId) {
     console.log("function is called", givenSecret, recipeId)
 
@@ -79,6 +139,82 @@ function editRecipe(id) {
 </script>
 
 </script>
+<div id="category">
+    {% for meal_type in meal_types %}
+    <p class="category_name">{{meal_type._id}}: {{ meal_type.count }}</p>
+    {% endfor %}
+
+    {% for diet in diets %}
+    <p class="category_name">{{diet._id}}: {{ diet.count }}</p>
+    {% endfor %}
+    <div id="filter_recipes">
+        <div class="dropdown-center">
+            <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="false" aria-expanded="false">
+              Filter
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <div class="btn-group" role="group" aria-label="Basic radio toggle button group 1" style="padding: 0px 16px ; display: flex; justify-content: center;">
+                        <input type="radio" class="btn-check" name="btnradio1" id="btnradio1" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="btnradio1">lunch</label>
+                    
+                        <input type="radio" class="btn-check" name="btnradio1" id="btnradio2" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="btnradio2">breakfast</label>
+                    
+                        <input type="radio" class="btn-check" name="btnradio1" id="btnradio3" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="btnradio3">snack</label>
+
+                        <input type="radio" class="btn-check" name="btnradio1" id="btnradio4" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="btnradio4">dinner</label>
+                    </div>
+                </li>
+                <li>
+                    <div class="btn-group" role="group" aria-label="Basic radio toggle button group 2" style="padding: 0px 16px ; display: flex; justify-content: center;">
+                        <input type="radio" class="btn-check" name="btnradio2" id="btnradio5" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="btnradio5">seafood</label>
+                    
+                        <input type="radio" class="btn-check" name="btnradio2" id="btnradio6" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="btnradio6">vegetarian</label>
+                    
+                        <input type="radio" class="btn-check" name="btnradio2" id="btnradio7" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="btnradio7">vegan</label>
+
+                        <input type="radio" class="btn-check" name="btnradio2" id="btnradio8" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="btnradio8">meat</label>
+                    </div>
+                </li>
+                <li>
+                    <div class='dropdown-item'>
+                        <p>Max time of cooking </p>
+                        <input type="range" value="24" min="1" max="120" oninput="this.nextElementSibling.value = this.value">
+                        <output id="max_time">24</output>
+                    </div>
+                </li>
+                <li class="d-grid gap-2 d-md-flex justify-content-md-end" style="padding: 10px;">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1" checked>
+                        <label class="form-check-label" for="flexRadioDefault1">
+                          none
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2" >
+                        <label class="form-check-label" for="flexRadioDefault2">
+                            ascending
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault3">
+                        <label class="form-check-label" for="flexRadioDefault3">
+                            descending
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary" onclick="submitFilters()">Submit</button>
+                </li>
+            </ul>
+        </div>    
+    </div>
+</div>
 <div class="all_recipes_container">
     <div class="recipes-columns">
         {% for recipe in recipes_list %}

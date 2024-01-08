@@ -1,10 +1,11 @@
-from flask import Flask, request, render_template, url_for, redirect, flash, make_response
+from flask import Flask, request, render_template, url_for, redirect, flash, make_response, jsonify
 import pymongo 
 from forms import Recipe
 from bson import json_util, ObjectId
 import os
 import random
 import string
+from bson.son import SON
 
 
 myclient = pymongo.MongoClient("mongodb://admin:admin@mongodb:27017/")
@@ -12,12 +13,13 @@ db = myclient["mydatabase"]
 recipes = db["recipes"]
 
 
-
 # print(recipes.find_one({'name': 'Parek na sucho'}))
 
 # sesradil jsem kolekce podle atributu "name", sestupne
 # mydoc = recipes.find().sort("name", 1)
 # print(mydoc, type(mydoc))
+
+
 
 app = Flask(__name__)
 SECRET_KEY = os.urandom(32)
@@ -32,7 +34,15 @@ def index():
 @app.route("/recipes")
 def recipes_page():
     recipes_list = recipes.find()
-    return render_template("recipes.html", recipes_list=recipes_list)
+    meal_types = recipes.aggregate([
+        {"$match": {}},
+        {"$group": {"_id": "$category.meal_type", "count": {"$sum": 1}}}
+    ])
+    diets = recipes.aggregate([
+        {"$match": {}},
+        {"$group": {"_id": "$category.diet", "count": {"$sum": 1}}}
+    ])
+    return render_template("recipes.html", recipes_list=recipes_list, meal_types=meal_types, diets=diets)
     
 @app.route("/add_recipe", methods = ['POST', 'GET'])
 def add_recipe():
@@ -105,6 +115,47 @@ def api_update_recipe(id):
         else:
             return make_response(json_util.dumps({'fail': 'Recipe is not found or no changes were made'}), 404)
 
+@app.route('/api/filter/', methods=['POST'])
+def filter_recipe():
+    meal_type = request.json.get("meal_type")
+    diet = request.json.get("diet")
+    max_time = request.json.get("max_time")
+    order = request.json.get("order")
+    pipeline = []
+
+    if meal_type:
+        pipeline.append({
+            "$match": {"category.meal_type": meal_type},
+        })
+
+    if diet:
+        pipeline.append({
+            "$match": {"category.diet": diet},
+        })
+
+    if max_time:
+        pipeline.append({
+            "$match": {"category.cook_time": {"$lte": max_time}},
+        })
+
+    if order != "none":
+        sort_order = 1 if order == "ascending" else -1
+        pipeline.append({
+            "$sort": {"category.cook_time": sort_order},
+        })
+
+    pipeline.append({
+        "$project": {
+            "_id": {"$toString": "$_id"},
+            "name": "$name",
+            "author": "$author",
+            "description": "$description",
+            "secret": "$secret",
+        }
+    })
+
+    filtered_list = list(recipes.aggregate(pipeline))
+    return jsonify(filtered_list)
 
 if __name__ == "__main__":
     app.run(debug = True, host='0.0.0.0', port=5000) 

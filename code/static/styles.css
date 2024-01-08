@@ -32,4 +32,17 @@ h2.recipe-description {
 }
   
 
-  
+#category {
+    display: flex;
+    padding-left: 10rem;
+}
+
+.category_name {
+    font-family: var(--bs-body-font-family);
+    padding-right: 2rem;
+}
+
+#filter_recipes {
+    margin-right: 10rem;
+    margin-left: auto;
+}
